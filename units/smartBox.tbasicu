@@ -1,0 +1,82 @@
+'
+' Custom SmartBox actor entity
+' Petr Schreiber, 12-31-2016
+'
+
+uses "tbgl", "math"
+
+' -----
+Type SmartBox
+  source as tbgl_tVector3f
+  target as tbgl_tVector3f 
+  
+  factor as single
+End Type                    
+
+'[!] Constructor and destructor
+Function SmartBox_Create( scene As Long) As Long
+
+  Dim entity As Long = TBGL_EntityGetFreeID(scene)
+  Dim data As SmartBox  
+
+  TBGL_EntityCreateFuncSlot(scene, entity, 0, "SmartBox_Render")
+    TBGL_EntitySetUserData(scene, entity, data)
+  
+  Return entity
+  
+End Function
+                    
+Function SmartBox_Destroy(scene AS LONG, entity AS LONG)
+  ' -- Destructor is not that needed as TBGL has garbage collection... 
+  TBGL_EntityDestroy(scene, entity)
+End Function
+
+'[!] Rendering
+Function SmartBox_Render()
+  Dim element As TBGL_tEntityIdentifier At TBGL_CallingEntity
+  Dim data    As SmartBox At TBGL_EntityGetUserDataPointer(element.scene, element.entity)
+
+  tbgl_Box 1, 1, 1
+  
+End Function
+
+'[!] Methods
+Function SmartBox_SetSource(scene AS LONG, entity AS LONG, x as single, y as single, z as single)
+  Dim data    As SmartBox At TBGL_EntityGetUserDataPointer(scene, entity)
+  
+  data.source.x = x
+  data.source.y = y
+  data.source.z = z
+  
+  tbgl_EntitySetPos(scene, entity, x, y, z)
+
+End Function
+
+Function SmartBox_SetTarget(scene AS LONG, entity AS LONG, x as single, y as single, z as single)
+  Dim data    As SmartBox At TBGL_EntityGetUserDataPointer(scene, entity)
+  
+  data.target.x = x
+  data.target.y = y
+  data.target.z = z
+
+End Function
+
+Function SmartBox_SetFactor(scene AS LONG, entity AS LONG, factor as single)
+  Dim data    As SmartBox At TBGL_EntityGetUserDataPointer(scene, entity)
+  
+  tbgl_EntitySetPos(scene, entity, lerp(data.source.x, data.target.x, factor),
+                                   lerp(data.source.y, data.target.y, factor),
+                                   lerp(data.source.z, data.target.z, factor))
+
+  tbgl_EntitySetColor(scene, entity, lerp(192, 255, factor),
+                                     lerp(192, 128, factor),
+                                     lerp(192, 64, factor))
+                                     
+  single rotation = lerp(sin(entity)*360, 0, factor)                                     
+  tbgl_EntitySetRot(scene, entity, rotation,
+                                   rotation,
+                                   rotation)
+                                     
+
+End Function
+

@@ -1,0 +1,96 @@
+'
+' Best wishes for successful year of 2017!
+' Petr Schreiber, last minutes of 2016
+'
+
+Uses "TBGL"
+
+#include "units/smartBox.tbasicu"
+
+BEGIN CONST
+  ' -- Scene IDs
+  %sScene  = 1
+ 
+  ' -- Entity IDs 
+  %eCamera = 1
+  %eLight
+  %ePivot
+
+END CONST 
+
+FUNCTION TBMAIN()
+  double FrameRate
+  
+  ' -- Create and show window
+  DWord hWnd = TBGL_CreateWindowEx("To our community - hold SPACE for magic, ESC to quit", 1280, 720, 32, %TBGL_WS_WINDOWED or %TBGL_WS_CLOSEBOX) 
+  TBGL_ShowWindow 
+
+  TBGL_SceneCreate(%sScene)
+
+  TBGL_EntityCreateCamera(%sScene, %eCamera)
+    TBGL_EntitySetPos(%sScene, %eCamera, 0, 3, 20)
+    TBGL_EntitySetTargetPos(%sScene, %eCamera, 0, 3, 0)  
+    
+  TBGL_EntityCreateLight(%sScene, %eLight)
+    TBGL_EntitySetPos(%sScene, %eLight, 15, 10, 5)
+
+  TBGL_EntityCreatePivot(%sScene, %ePivot)
+  
+  string bitmapRow(7) = "111 111   11   11   1 1111",
+                        "1 1 1    1  1 1  1 11    1",
+                        "111 11      1 1  1  1    1",
+                        "1   1      1  1  1  1   1 ",
+                        "1   1     1   1  1  1  1  ",
+                        "1   1    1111  11   1 1   "
+
+  long i, j
+  long first, current, last
+  
+  for i = 1 to countOf(bitmapRow)
+    for j = 1 to len(bitmapRow(i))
+      if mid$(bitmapRow(i), j, 1) = "1" then
+        current = SmartBox_Create(%sScene)
+        SmartBox_SetSource(%sScene, current, rndf(-16, 16), rndf(-16, 16), rndf(-16, 16))
+        SmartBox_SetTarget(%sScene, current, j-len(bitmapRow(i))/2, -i+7, 0)
+        tbgl_EntitySetParent(%sScene, current, %ePivot)
+        if first = 0 then first = current
+      end if    
+    next
+  next
+  last = current
+
+  TBGL_ResetKeyState() 
+
+  number animationTime, animationNow
+  
+  animationTime = 1500
+  ' -- Main loop
+  While TBGL_IsWindow(hWnd) 
+    FrameRate = TBGL_GetFrameRate
+    
+    tbgl_EntitySetRot(%sScene, %ePivot, 0, 0, sin(gettickcount/1000)*5)
+
+    TBGL_ClearFrame 
+
+      TBGL_SceneRender(%sScene)
+      
+    TBGL_DrawFrame 
+
+    ' -- ESCAPE key to exit application
+    If TBGL_GetWindowKeyState(hWnd, %VK_ESCAPE) Then Exit While 
+    
+    If TBGL_GetWindowKeyState(hWnd, %VK_Space) Then
+      animationNow += 1000/FrameRate
+      if animationNow > animationTime then animationNow = animationTime
+    else
+      animationNow -= 500/FrameRate      
+      if animationNow < 0 then animationNow = 0
+    end if
+    for i = first to last
+      SmartBox_SetFactor(%sScene, i, animationNow/animationTime)        
+    next
+
+  Wend 
+
+  TBGL_DestroyWindow
+END FUNCTION
